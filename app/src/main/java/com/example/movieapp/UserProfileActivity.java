@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -117,8 +118,9 @@ public class UserProfileActivity extends AppCompatActivity {
         setFavoritesRecycler();
 
     }
+
     private void userInfo(){
-        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("/users").child(user.getUid());
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users").child(user.getUid());
         userRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -131,10 +133,23 @@ public class UserProfileActivity extends AppCompatActivity {
             }
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
+                System.out.println("The read failed: " + error.getCode());
             }
         });
     }
+
+
     private void setFavoritesRecycler() {
+        //favorities arraylist'ini oluşturucaksın daha sonra içinde bulunan idler ile
+        //filmler arasında aratacaksın, aramanın sonucunda retrofit çağrısının içinde
+        // arraylist'e elemanları ekleyeceksiniz ve elinizde sevdiği bütün filmlerin id'si olan bir
+        //string arraylist elde etmiş olacaksınız.
+
+        //Daha sonra da elinizdeki o arraylist 'in içindeki idler ile tek tek ilgili filmlerin bilgileri
+        //getirip alttaki  favoritesList'e ekleyeceksiniz.
+
+
+
         List<Favorites> favoritesList = new ArrayList<>();
         favoritesList.add(new Favorites("The Outlander","https://tr.web.img3.acsta.net/r_1280_720/pictures/14/05/09/11/16/481757.jpg"));
         favoritesList.add(new Favorites("The OA","https://i.pinimg.com/originals/b3/85/16/b3851673620461d1317a64833c5ad5e7.jpg"));

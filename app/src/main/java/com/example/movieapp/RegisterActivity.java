@@ -25,6 +25,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.core.utilities.PushIdGenerator;
+import com.google.firebase.database.snapshot.ChildKey;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -140,12 +142,16 @@ public class RegisterActivity extends AppCompatActivity {
         }); */
 
     }
+
+
     //RealTimeDatabase register
     public void register(View view){
+
         String mEmail = email.getText().toString().trim();
         String mPassword = password.getText().toString().trim();
         String mFullName = fullName.getText().toString().trim();
         String mUserName = userName.getText().toString().trim();
+        ArrayList<String> favorites =  new ArrayList<>();
 
         if(!TextUtils.isEmpty(mEmail) && !TextUtils.isEmpty(mPassword) && !TextUtils.isEmpty(mFullName) && !TextUtils.isEmpty(mUserName)){
             mAuth.createUserWithEmailAndPassword(mEmail,mPassword)
@@ -154,10 +160,11 @@ public class RegisterActivity extends AppCompatActivity {
                         public void onComplete(@NonNull Task<AuthResult> task) {
                             if(task.isSuccessful()){
                                 user= mAuth.getCurrentUser(); //importent
-                                userID = mAuth.getUid();
 
-                                mRef.child("users").push().setValue(new User(userID,mEmail ,mFullName,
-                                        mPassword,mUserName));
+                                mRef.child("users").child(mAuth.getUid()).setValue(new User(mAuth.getUid(),mEmail ,mFullName,
+                                        mPassword,mUserName,favorites));
+
+
                                 Toast.makeText(RegisterActivity.this, "Kayıt İşlemi Başarılı.", Toast.LENGTH_SHORT).show();
                                 startActivity(new Intent(getApplicationContext(),HomePage.class));
                                 /*mRef.child("users");

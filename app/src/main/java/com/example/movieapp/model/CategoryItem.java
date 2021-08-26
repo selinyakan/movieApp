@@ -20,11 +20,13 @@ public class CategoryItem {
     public boolean video;
     public double vote_average;
     public int vote_count;
+    public boolean isMovie;
 
-    public CategoryItem(String poster_path, String title, int id) {
+    public CategoryItem(String poster_path, String title, int id,boolean isMovie) {
         this.poster_path = poster_path;
         this.title = title;
         this.id = id;
+        this.isMovie = isMovie;
     }
 
     public String getPoster_path() {

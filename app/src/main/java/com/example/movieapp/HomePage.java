@@ -183,7 +183,7 @@ public class HomePage extends AppCompatActivity {
 
                     for (int i=0;i<result.results.size(); i++){
                         data.add(new CategoryItem("https://image.tmdb.org/t/p/w500" +result.results.get(i).poster_path
-                                ,result.results.get(i).title, result.results.get(i).id));
+                                ,result.results.get(i).title, result.results.get(i).id,true));
                     }
 
                     filmAllCategoryList.add(new AllCategory(Integer.parseInt(pageNumber), "", data));
@@ -213,7 +213,7 @@ public class HomePage extends AppCompatActivity {
                     List<CategoryItem> data1 = new ArrayList<>();
                     for (int i=0;i<result1.results.size(); i++){
                         data1.add(new CategoryItem("https://image.tmdb.org/t/p/w500" +result1.results.get(i).poster_path,
-                                result1.results.get(i).title, result1.results.get(i).id));
+                                result1.results.get(i).title, result1.results.get(i).id,true));
 
                     }
                     allCategoryList.add(new AllCategory(i, "*"+ genre[i].toString(), data1));
@@ -240,7 +240,7 @@ public class HomePage extends AppCompatActivity {
                     List<CategoryItem> data1 = new ArrayList<>();
                     for (int i=0;i<result1.results.size(); i++){
                         data1.add(new CategoryItem("https://image.tmdb.org/t/p/w500" +result1.results.get(i).poster_path,
-                                result1.results.get(i).title, result1.results.get(i).id));
+                                result1.results.get(i).title, result1.results.get(i).id,false));
 
                     }
 

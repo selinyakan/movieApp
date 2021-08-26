@@ -17,12 +17,12 @@ import com.example.movieapp.adapter.CastAdapter;
 import com.example.movieapp.adapter.GenreAdapter;
 import com.example.movieapp.adapter.KanalAdapter;
 import com.example.movieapp.model.Cast;
-import com.example.movieapp.model.Crew;
 import com.example.movieapp.model.Flatrate;
 import com.example.movieapp.model.Genre;
 import com.example.movieapp.model.MovieListBaseM;
 import com.example.movieapp.model.ProviderList;
 import com.example.movieapp.model.SeriesListBaseM;
+import com.example.movieapp.model.User;
 import com.example.movieapp.restapi.IRest;
 import com.example.movieapp.restapi.RetrofitPage;
 import com.google.firebase.auth.FirebaseAuth;
@@ -48,23 +48,92 @@ public class MovieDetailsPage extends AppCompatActivity {
     private CastAdapter castAdapter;
     ImageButton favoriButton;
 
+    private ArrayList<String> allFavoriteMovies;
+    private ArrayList<String> allFavoriteTvSeries;
+    private boolean isMovie;
+
+
+    private void readFavoritiesMovies(){
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getUid());
+        userRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if(snapshot.exists()){
+                    if (snapshot.getValue(User.class).getFavorities() != null)
+                    {
+                        allFavoriteMovies = snapshot.getValue(User.class).getFavorities();
+                        Log.d("","SIZE IS: "+ allFavoriteMovies.size());
+                    }
+                    else
+                    {
+                        allFavoriteMovies = new ArrayList<>();
+                        Log.d("","newww newww: "+ allFavoriteMovies.size());
+                    }
+
+                   //tv serileri için aynı mantık uygulanacak......
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                System.out.println("The read failed: " + error.getCode());
+            }
+        });
+    }
+
+
+    private void addNewFavoriteMovie(String id){
+        FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
+
+        allFavoriteMovies.add(id);
+
+        /*
+          if(favoriButton.getTag().equals("save"))
+        {
+
+        }
+        else
+        {
+            for (int i=0;i<allFavorites.size();i++)
+            {
+                if (allFavorites.get(i).equals(id))
+                {
+                    allFavorites.remove(i);
+                }
+            }
+        }
+         */
+
+        if (isMovie)
+        {
+            FirebaseDatabase.getInstance().getReference("users")
+                    .child(mAuth.getUid()).child("favoriteMovies").child(String.valueOf(allFavoriteMovies.size() - 1)).setValue(allFavoriteMovies.get(allFavoriteMovies.size() - 1));
+        }
+        else
+        {
+            FirebaseDatabase.getInstance().getReference("users")
+                    .child(mAuth.getUid()).child("favoriteTvSeries").child(String.valueOf(allFavoriteMovies.size() - 1)).setValue(allFavoriteMovies.get(allFavoriteMovies.size() - 1));
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_detail);
+        readFavoritiesMovies();
         initializeUIElements();
         String id = getIntent().getStringExtra("movieId");
+        isMovie = getIntent().getBooleanExtra("isMovie",false);
 
         favoriButton.setOnClickListener(v->{
-            FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
-
-            if(favoriButton.getTag().equals("save")){
-                FirebaseDatabase.getInstance().getReference("users")
-                        .child(mAuth.getUid()).child("favorites").child(id).setValue(true);
-            }else{
-                FirebaseDatabase.getInstance().getReference("users")
-                        .child(mAuth.getUid()).child("favorites").child(id).removeValue();
+            if (allFavoriteMovies != null)
+            {
+                addNewFavoriteMovie(id);
             }
+            else
+            {
+                Toast.makeText(this, "Favori listeniz alınırken bir hata oluştu.", Toast.LENGTH_SHORT).show();
+            }
+
         });
 
         setupRvCast(id);
@@ -292,8 +361,6 @@ public class MovieDetailsPage extends AppCompatActivity {
                 Log.d("","error catched at getPatientTCNo: "+t);
             }
         });
-
-
     }
 
     private void getMovieList(String id){
