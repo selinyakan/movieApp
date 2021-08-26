@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name"></string>
+    <string name="simple_text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi id diam at nulla blandit
+        pharetra eget id sem. Ut elementum dignissim cursus. Vestibulum ante ipsum primis in faucibus orci luctus et
+        ultrices posuere cubilia curae; Nam interdum eros in arcu accumsan, ac tempor nisl rutrum. Pellentesque maximus maximus
+        tortor vel ornare. Donec orci tortor, convallis non varius eu, iaculis sed dolor.</string>
+
+
+</resources>

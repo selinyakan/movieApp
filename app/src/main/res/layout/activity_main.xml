@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg1"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="10dp" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="561dp"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp">
+
+        <EditText
+            android:id="@+id/login_email"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="100dp"
+            android:layout_marginBottom="10dp"
+            android:hint="E-mail"
+            android:textColor="@color/white"
+            android:inputType="textEmailAddress"
+            android:padding="10dp"
+            android:singleLine="true"
+            android:textColorHint="@color/gray"
+            android:textStyle="bold|italic" />
+
+        <EditText
+            android:id="@+id/login_password"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:hint="Şifre"
+            android:textColor="@color/white"
+            android:inputType="textPassword"
+            android:padding="10dp"
+            android:singleLine="true"
+            android:textColorHint="@color/gray"
+            android:textStyle="bold|italic" />
+
+        <TextView
+            android:id="@+id/forget_password"
+            android:layout_width="340dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="170dp"
+            android:clickable="true"
+            android:onClick="forgetPass"
+            android:gravity="right|center_vertical"
+            android:text="Şifremi unuttum..."
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:textStyle="italic" />
+
+        <Button
+            android:id="@+id/loginButton"
+            android:layout_width="fill_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="0dp"
+            android:backgroundTint="#483d8b"
+            android:hint="Giriş Yap"
+            android:onClick="login"
+            android:textColor="#fff"
+            android:textColorHint="@color/gray" />
+
+        <Button
+            android:id="@+id/registerButton"
+            android:layout_width="fill_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="0dip"
+            android:backgroundTint="#483d8b"
+            android:hint="Hesabınız yok mu? Kayıt olun."
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textColorHint="@color/gray"
+            android:textSize="15dp" />
+
+
+    </LinearLayout>
+
+</LinearLayout>
