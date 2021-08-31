@@ -70,7 +70,7 @@ public class SearchPage extends AppCompatActivity {
                         mData.add(new SearchMovie("https://image.tmdb.org/t/p/w500"
                                 + result.results.get(i).backdrop_path, result.results.get(i).overview,
                                 "https://image.tmdb.org/t/p/w500" + result.results.get(i).poster_path
-                                , result.results.get(i).title, result.results.get(i).vote_average, result.results.get(i).id));
+                                , result.results.get(i).title, result.results.get(i).vote_average, result.results.get(i).id, true));
                         //Log.d("","error catched at getPatientTCNo: "+result.results.get(i).title);
                     }
                     searchAdapter = new SearchAdapter(SearchPage.this, mData);

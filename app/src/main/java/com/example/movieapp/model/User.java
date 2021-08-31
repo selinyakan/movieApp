@@ -8,7 +8,8 @@ public class User {
     private String fullName;
     private String password;
     private String userName;
-    private ArrayList<String> favorities;
+    private ArrayList<String> favoriteMovies;
+    private ArrayList<String> favoriteTvSeries;
     //private int movieId;
     //buraya da favori tv serileri eklenecek.
 
@@ -16,14 +17,22 @@ public class User {
 
     }
 
-    public User(String userId, String email, String fullName, String password, String userName,ArrayList<String> favorities) {
+    public User(String email,String fullName,String userName) {
+        this.fullName = fullName;
+        this.userName = userName;
+        this.email = email;
+    }
+
+    public User(String userId, String email, String fullName, String password, String userName, ArrayList<String> favoriteMovies, ArrayList<String> favoriteTvSeries) {
         this.userId = userId;
         this.email = email;
         this.fullName = fullName;
         this.password = password;
         this.userName = userName;
-        this.favorities = favorities;
+        this.favoriteMovies = favoriteMovies;
+        this.favoriteTvSeries = favoriteTvSeries;
     }
+
    /* public int getMovieId() {
         return movieId;
     }*/
@@ -31,6 +40,22 @@ public class User {
     /*public void setMovieId(int movieId) {
         this.movieId = movieId;
     }*/
+
+    public ArrayList<String> getFavoriteMovies() {
+        return favoriteMovies;
+    }
+
+    public void setFavoriteMovies(ArrayList<String> favoriteMovies) {
+        this.favoriteMovies = favoriteMovies;
+    }
+
+    public ArrayList<String> getFavoriteTvSeries() {
+        return favoriteTvSeries;
+    }
+
+    public void setFavoriteTvSeries(ArrayList<String> favoriteTvSeries) {
+        this.favoriteTvSeries = favoriteTvSeries;
+    }
 
     public String getUserId() {
         return userId;
@@ -44,13 +69,6 @@ public class User {
         return email;
     }
 
-    public ArrayList<String> getFavorities() {
-        return favorities;
-    }
-
-    public void setFavorities(ArrayList<String> favorities) {
-        this.favorities = favorities;
-    }
 
     public void setEmail(String email) {
         this.email = email;

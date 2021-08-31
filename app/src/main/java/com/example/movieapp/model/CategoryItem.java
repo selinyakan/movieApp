@@ -22,7 +22,7 @@ public class CategoryItem {
     public int vote_count;
     public boolean isMovie;
 
-    public CategoryItem(String poster_path, String title, int id,boolean isMovie) {
+    public CategoryItem(String poster_path,String title, int id,boolean isMovie) {
         this.poster_path = poster_path;
         this.title = title;
         this.id = id;

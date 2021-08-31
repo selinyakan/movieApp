@@ -76,6 +76,7 @@
         android:background="#cc0000"
         android:fontFamily="@font/montserrat_bold"
         android:text="Kaydet"
+        android:onClick="update"
         android:textColor="#FFFFFF"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

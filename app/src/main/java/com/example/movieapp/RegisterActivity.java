@@ -151,7 +151,9 @@ public class RegisterActivity extends AppCompatActivity {
         String mPassword = password.getText().toString().trim();
         String mFullName = fullName.getText().toString().trim();
         String mUserName = userName.getText().toString().trim();
-        ArrayList<String> favorites =  new ArrayList<>();
+        ArrayList<String> favoriteMovie =  new ArrayList<>();
+        ArrayList<String> favoriteTvSeries =  new ArrayList<>();
+
 
         if(!TextUtils.isEmpty(mEmail) && !TextUtils.isEmpty(mPassword) && !TextUtils.isEmpty(mFullName) && !TextUtils.isEmpty(mUserName)){
             mAuth.createUserWithEmailAndPassword(mEmail,mPassword)
@@ -162,7 +164,7 @@ public class RegisterActivity extends AppCompatActivity {
                                 user= mAuth.getCurrentUser(); //importent
 
                                 mRef.child("users").child(mAuth.getUid()).setValue(new User(mAuth.getUid(),mEmail ,mFullName,
-                                        mPassword,mUserName,favorites));
+                                        mPassword,mUserName,favoriteMovie,favoriteTvSeries));
 
 
                                 Toast.makeText(RegisterActivity.this, "Kayıt İşlemi Başarılı.", Toast.LENGTH_SHORT).show();

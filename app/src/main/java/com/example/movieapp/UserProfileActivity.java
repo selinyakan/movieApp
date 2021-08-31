@@ -20,9 +20,16 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.example.movieapp.adapter.UserProfileFavoritesAdapter;
+import com.example.movieapp.model.AllCategory;
+import com.example.movieapp.model.CategoryItem;
 import com.example.movieapp.model.Favorites;
+import com.example.movieapp.model.MovieListBaseM;
+import com.example.movieapp.model.SeriesListBaseM;
 import com.example.movieapp.model.User;
+import com.example.movieapp.restapi.IRest;
+import com.example.movieapp.restapi.RetrofitPage;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -45,6 +52,11 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+
 //10.08
 public class UserProfileActivity extends AppCompatActivity {
     RecyclerView movieList;
@@ -53,7 +65,7 @@ public class UserProfileActivity extends AppCompatActivity {
     TextView favMovieName;
     ImageView favMovieImg;
     //18.08 Gün Sonu
-    TextView fullName, userName,email;
+    TextView fullName, userName, email;
     FirebaseFirestore mStore;
     FirebaseAuth mAuth;
     String userID;
@@ -64,16 +76,16 @@ public class UserProfileActivity extends AppCompatActivity {
     ImageView profilePhoto;
     StorageReference storageReference;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_profile);
         settingButton = findViewById(R.id.setting_button);
         movieList = findViewById(R.id.userprofile_recycler);
-        favMovieName = findViewById(R.id.favorites_movie_name);
         favMovieImg = findViewById(R.id.favorites_movie_img);
         //18.08 Gün Sonu
-        fullName =findViewById(R.id.profile_fullname);
+        fullName = findViewById(R.id.profile_fullname);
         userName = findViewById(R.id.profile_username);
         email = findViewById(R.id.profile_email);
         profilePhoto = findViewById(R.id.user_profil_photo);
@@ -84,13 +96,13 @@ public class UserProfileActivity extends AppCompatActivity {
         user = mAuth.getCurrentUser();
         storageReference = FirebaseStorage.getInstance().getReference();
 
-        StorageReference profileRef = storageReference.child("users/"+mAuth.getCurrentUser().getUid()+"/profile.jpg");
+        StorageReference profileRef = storageReference.child("users/" + mAuth.getCurrentUser().getUid() + "/profile.jpg");
         profileRef.getDownloadUrl().addOnSuccessListener(uri -> Picasso.get().load(uri).into(profilePhoto));
         //19.08
         verifyMsg = findViewById(R.id.verify_msg);
         verifyEmailBtn = findViewById(R.id.verify_button);
         //19.08
-        if(!user.isEmailVerified()) {
+        if (!user.isEmailVerified()) {
             verifyEmailBtn.setVisibility(View.VISIBLE);
             verifyMsg.setVisibility(View.VISIBLE);
         }
@@ -115,8 +127,69 @@ public class UserProfileActivity extends AppCompatActivity {
             }
         });*/
         userInfo();
-        setFavoritesRecycler();
+        // transferMovie();
+        // setFavoritesRecycler();
 
+    }
+
+    private void transferMovie(ArrayList<String> favoriteMovies2, ArrayList<String> favoriteMovies3) {
+        ArrayList<String> link = new ArrayList<>();
+        ArrayList<Boolean> link2 = new ArrayList<>();
+        ArrayList<String> link3 = new ArrayList<>();
+        for (int i = 0; i < favoriteMovies2.size(); i++) {
+            Call<MovieListBaseM> call = prepareRetrofit().getMovieCredits(favoriteMovies2.get(i));
+            int y=i;
+            call.enqueue(new Callback<MovieListBaseM>() {
+
+                @Override
+                public void onResponse(Call<MovieListBaseM> call, Response<MovieListBaseM> response) {
+                    MovieListBaseM result = response.body();
+
+
+                    if (response.isSuccessful() && result != null) {
+                        link.add(result.poster_path);
+                        link2.add(true);
+                        link3.add(favoriteMovies2.get(y));
+
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<MovieListBaseM> call, Throwable t) {
+                    Log.d("", "error catched at getPatientTCNo: " + t);
+                }
+            });
+        }
+        transferSeries(favoriteMovies3, link, favoriteMovies2, link2, link3);
+    }
+
+    private void transferSeries(ArrayList<String> favoriteMovies3, ArrayList<String> link, ArrayList<String> favoriteMovies2, ArrayList<Boolean> link2, ArrayList<String> link3) {
+        favoriteMovies2.addAll(favoriteMovies3);
+        for (int i = 0; i < favoriteMovies3.size(); i++) {
+            Call<SeriesListBaseM> call = prepareRetrofit().getSeriesCredits(favoriteMovies3.get(i));
+            int y=i;
+            call.enqueue(new Callback<SeriesListBaseM>() {
+
+                @Override
+                public void onResponse(Call<SeriesListBaseM> call, Response<SeriesListBaseM> response) {
+                    SeriesListBaseM result = response.body();
+
+
+                    if (response.isSuccessful() && result != null) {
+                        link.add(result.poster_path);
+                        link2.add(false);
+                        link3.add(favoriteMovies3.get(y));
+
+                    }
+                    setFavoritesRecycler(link, link2, link3);
+                }
+
+                @Override
+                public void onFailure(Call<SeriesListBaseM> call, Throwable t) {
+                    Log.d("", "error catched at getPatientTCNo: " + t);
+                }
+            });
+        }
     }
 
     private void userInfo(){
@@ -129,6 +202,11 @@ public class UserProfileActivity extends AppCompatActivity {
                     fullName.setText(user.getFullName());
                     userName.setText(user.getUserName());
                     email.setText(user.getEmail());
+                    if(user.getFavoriteMovies() == null || user.getFavoriteTvSeries() == null){
+
+                    }else{
+                        transferMovie(user.getFavoriteMovies(),user.getFavoriteTvSeries());
+                    }
                 }
             }
             @Override
@@ -138,41 +216,27 @@ public class UserProfileActivity extends AppCompatActivity {
         });
     }
 
-
-    private void setFavoritesRecycler() {
-        //favorities arraylist'ini oluşturucaksın daha sonra içinde bulunan idler ile
-        //filmler arasında aratacaksın, aramanın sonucunda retrofit çağrısının içinde
-        // arraylist'e elemanları ekleyeceksiniz ve elinizde sevdiği bütün filmlerin id'si olan bir
-        //string arraylist elde etmiş olacaksınız.
-
-        //Daha sonra da elinizdeki o arraylist 'in içindeki idler ile tek tek ilgili filmlerin bilgileri
-        //getirip alttaki  favoritesList'e ekleyeceksiniz.
-
-
-
+    private void setFavoritesRecycler(ArrayList<String> link, ArrayList<Boolean> link2, ArrayList<String> link3) {
         List<Favorites> favoritesList = new ArrayList<>();
-        favoritesList.add(new Favorites("The Outlander","https://tr.web.img3.acsta.net/r_1280_720/pictures/14/05/09/11/16/481757.jpg"));
-        favoritesList.add(new Favorites("The OA","https://i.pinimg.com/originals/b3/85/16/b3851673620461d1317a64833c5ad5e7.jpg"));
-        favoritesList.add(new Favorites("Yıldızlararası","https://tr.web.img2.acsta.net/pictures/14/10/09/15/52/150664.jpg"));
-        favoritesList.add(new Favorites("Teen Wolf","https://cdn.dsmcdn.com//ty10/product/media/images/20201015/18/16130237/93722623/1/1_org_zoom.jpg"));
-        favoritesList.add(new Favorites("Sully","https://www.cocuklasinema.com/assets/admin/images/movie/0-sully.jpg"));
-        favoritesList.add(new Favorites("Vis a Vis","https://tr.web.img4.acsta.net/r_1280_720/pictures/16/03/10/09/39/100264.jpg"));
-        favoritesList.add(new Favorites("How I Met Your Mother","https://tr.web.img4.acsta.net/medias/nmedia/18/74/38/63/20215058.jpg"));
-        favoritesList.add(new Favorites("Harry Potter ve Ateş Kadehi ","https://tr.web.img2.acsta.net/pictures/bzp/01/53756.jpg"));
-        favoritesList.add(new Favorites("Babam ve Oğlum","https://tr.web.img3.acsta.net/pictures/13/12/09/21/04/046693.jpg"));
-        favoritesList.add(new Favorites("Venom Zehirli Öfke 2","https://tr.web.img4.acsta.net/pictures/21/05/10/15/42/2170945.jpg"));
+
+        for (int i=0; i<link.size(); i++){
+            favoritesList.add(new Favorites("https://image.tmdb.org/t/p/w500" +link.get(i),
+                    link2.get(i), link3.get(i)));
+        }
 
 
-        profileAdapter = new UserProfileFavoritesAdapter(this,favoritesList);
-        GridLayoutManager gridLayoutManager =new GridLayoutManager(this,3,GridLayoutManager.VERTICAL,false);
+        profileAdapter = new UserProfileFavoritesAdapter(UserProfileActivity.this,favoritesList);
+        GridLayoutManager gridLayoutManager =new GridLayoutManager(UserProfileActivity.this,3,GridLayoutManager.VERTICAL,false);
         movieList.setLayoutManager(gridLayoutManager);
         movieList.setAdapter(profileAdapter);
+
+
 
         settingButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, SettingsActivity.class);
             Toast.makeText(getApplicationContext(),"Ayarlar Sayfasına Yönlendiriliyor",Toast.LENGTH_SHORT).show();
-            intent.putExtra("fName",fullName.getText().toString());
-            intent.putExtra("username",userName.getText().toString());
+            intent.putExtra("fullName",fullName.getText().toString());
+            intent.putExtra("userName",userName.getText().toString());
             intent.putExtra("email",email.getText().toString());
 
             startActivity(intent);
@@ -185,6 +249,10 @@ public class UserProfileActivity extends AppCompatActivity {
             startActivityForResult(openGalleryIntent,1000);
 
         });
+    }
+    public static IRest prepareRetrofit(){
+        Retrofit retrofit = RetrofitPage.getRetrofit();
+        return retrofit.create(IRest.class);
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @androidx.annotation.Nullable Intent data) {

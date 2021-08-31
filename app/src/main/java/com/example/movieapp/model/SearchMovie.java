@@ -17,14 +17,16 @@ public class SearchMovie {
     public boolean video;
     public double vote_average;
     public int vote_count;
+    public boolean isMovie;
 
-    public SearchMovie(String backdrop_path, String overview, String poster_path, String title, double vote_average, Integer id) {
+    public SearchMovie(String backdrop_path, String overview, String poster_path, String title, double vote_average, Integer id, boolean isMovie) {
         this.backdrop_path = backdrop_path;
         this.overview = overview;
         this.poster_path = poster_path;
         this.title = title;
         this.vote_average = vote_average;
         this.id = id;
+        this.isMovie = isMovie;
     }
 
     public String getPoster_path() {

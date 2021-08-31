@@ -10,6 +10,7 @@ public class SeriesListBaseM {
     public List<Cast> cast;
     public List<Crew> crew;
     public List<CategoryItem> resultss;
+    public List<Genre> genres;
     public List<SeriesPojo> results3;
     public String backdrop_path;
     public int id;

@@ -46,8 +46,6 @@ public class ItemRecyclerAdapter extends RecyclerView.Adapter<ItemRecyclerAdapte
         holder.itemImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(context, ""+categoryItem.title,Toast.LENGTH_SHORT).show();
-
                 Intent i = new Intent(context, MovieDetailsPage.class);
                 i.putExtra("isMovie",categoryItem.isMovie);
                 i.putExtra("movieId",String.valueOf(categoryItem.id));

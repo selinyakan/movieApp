@@ -24,11 +24,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.movieapp.model.User;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -57,6 +60,8 @@ public class SettingsActivity extends AppCompatActivity {
     //Button changePassword;
     AlertDialog.Builder reset_alert;
     LayoutInflater inflater;
+    DatabaseReference databaseRef;
+    String fullName,userName,email;
 
 
     @Override
@@ -67,9 +72,9 @@ public class SettingsActivity extends AppCompatActivity {
         exitButton = findViewById(R.id.logout);
 
         Intent data = getIntent();
-        String fullName=data.getStringExtra("fName");
-        String userName=data.getStringExtra("username");
-        String email=data.getStringExtra("email");
+        fullName=data.getStringExtra("fullName");
+        userName=data.getStringExtra("userName");
+        email=data.getStringExtra("email");
 
         //20.08
         reset_alert= new AlertDialog.Builder(this);
@@ -87,16 +92,12 @@ public class SettingsActivity extends AppCompatActivity {
         mStore = FirebaseFirestore.getInstance();
         user = mAuth.getCurrentUser();
         storageReference = FirebaseStorage.getInstance().getReference();
+        databaseRef = FirebaseDatabase.getInstance().getReference("users");
 
 
         //bunu eklediğimizde bi önceki sayfadaki fotoğraf settingse de aktarıldı.
         StorageReference profileRef = storageReference.child("users/"+user.getUid()+"/profile.jpg");
-        profileRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-            @Override
-            public void onSuccess(Uri uri) {
-                Picasso.get().load(uri).into(profilePhoto);
-            }
-        });
+        profileRef.getDownloadUrl().addOnSuccessListener(uri -> Picasso.get().load(uri).into(profilePhoto));
 
         exitButton.setOnClickListener(v->{
             FirebaseAuth.getInstance().signOut();
@@ -120,8 +121,9 @@ public class SettingsActivity extends AppCompatActivity {
 
         });
 
-
+/*
         saveBtn.setOnClickListener(v->{
+
             if(profileFullName.getText().toString().isEmpty() || profileEmail.getText().toString().isEmpty() || profileUserName.getText().toString().isEmpty()){
                 Toast.makeText(SettingsActivity.this, "Bir veya birçok alan boş.", Toast.LENGTH_SHORT).show();
                 return;
@@ -130,28 +132,17 @@ public class SettingsActivity extends AppCompatActivity {
             user.updateEmail(mail).addOnSuccessListener(new OnSuccessListener<Void>() {
                 @Override
                 public void onSuccess(Void unused) {
-                    DocumentReference documentReference = mStore.collection("users").document(user.getUid());
+                    DocumentReference documentReference
                     Map<String,Object> edited = new HashMap<>();
                     edited.put("email",mail);
-                    edited.put("fName",profileFullName.getText().toString());
-                    edited.put("username",profileUserName.getText().toString());
-                    documentReference.update(edited).addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void unused) {
-                            Toast.makeText(SettingsActivity.this, "Profil Güncellendi.", Toast.LENGTH_SHORT).show();
+                    edited.put("fullName",profileFullName.getText().toString());
+                    edited.put("userName",profileUserName.getText().toString());
 
-                        }
-                    });
-                    Toast.makeText(SettingsActivity.this, "E-mail değişti.", Toast.LENGTH_SHORT).show();
+                    documentReference.update(edited).addOnSuccessListener(unused1 -> Toast.makeText(SettingsActivity.this, "Profil Güncellendi.", Toast.LENGTH_SHORT).show());
+                    Toast.makeText(SettingsActivity.this, "Kullanıcı Bilgileri Güncellendi.", Toast.LENGTH_SHORT).show();
                 }
-            }).addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
-                    Toast.makeText(SettingsActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-
-                }
-            });
-        });
+            }).addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
+        }); */
 
         profileFullName.setText(fullName);
         profileUserName.setText(userName);
@@ -202,7 +193,48 @@ public class SettingsActivity extends AppCompatActivity {
 
 
 
-}//OnCreate Kapanışı
+    }//OnCreate Kapanışı
+
+    public void update(View v){
+        if (isFullNameChanged()  || isEmailChanged() || isUserNameChanged()){
+            Toast.makeText(SettingsActivity.this, "Profil Bilgileri Güncellendi.", Toast.LENGTH_SHORT).show();
+        }else{
+            Toast.makeText(SettingsActivity.this, "Bilgiler Güncellenemedi", Toast.LENGTH_SHORT).show();
+
+        }
+    }
+
+    private boolean isFullNameChanged() {
+        if(!fullName.equals(profileFullName.getText().toString())){
+            databaseRef.child(mAuth.getUid()).child("fullName").setValue(profileFullName.getText().toString());
+            fullName = profileFullName.getText().toString();
+            return true;
+        }else{
+            return false;
+        }
+    }
+ /*   private boolean isPasswordChanged() {
+    }*/
+    private boolean isEmailChanged() {
+        if(!email.equals(profileEmail.getText().toString())){
+            databaseRef.child(mAuth.getUid()).child("email").setValue(profileEmail.getText().toString());
+            email = profileEmail.getText().toString();
+            return true;
+        }else{
+            return false;
+        }
+    }
+    private boolean isUserNameChanged() {
+        if(!userName.equals(profileUserName.getText().toString())){
+            databaseRef.child(mAuth.getUid()).child("userName").setValue(profileUserName.getText().toString());
+            userName = profileUserName.getText().toString();
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @androidx.annotation.Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -254,6 +286,7 @@ public class SettingsActivity extends AppCompatActivity {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
                             FirebaseUser user = mAuth.getCurrentUser();
+
                             user.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
                                 @Override
                                 public void onSuccess(Void unused) {

@@ -3,30 +3,14 @@ package com.example.movieapp.model;
 //Bu sayfa 11/08 de oluşturuldu
 
 public class Favorites {
-    String name;
-    String favoriteMovie;
+    public String poster_path;
+    public boolean isMovie;
+    public String id1;
 
-    public Favorites(String name, String favoriteMovie) {
-        this.name = name;
-        this.favoriteMovie = favoriteMovie;
+    public Favorites(String poster_path, boolean isMovie, String id1) {
+        this.poster_path = poster_path;
+        this.isMovie = isMovie;
+        this.id1 = id1;
     }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getFavoriteMovie() {
-        return favoriteMovie;
-    }
-
-    public void setFavoriteMovie(String favoriteMovie) {
-        this.favoriteMovie = favoriteMovie;
-    }
-
-
 
 }

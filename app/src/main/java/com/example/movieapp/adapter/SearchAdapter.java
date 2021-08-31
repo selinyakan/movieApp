@@ -54,6 +54,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SearchView
 
                 Intent i = new Intent(mcontext, MovieDetailsPage.class);
                 i.putExtra("movieId",String.valueOf(movie.id));
+                i.putExtra("isMovie",movie.isMovie);
                 mcontext.startActivity(i);
             }
         });
@@ -101,7 +102,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SearchView
                     for (SearchMovie movie : mData2) {
                         // search for station name
                         if (movie.getTitle().toLowerCase().contains(searchString)) {
-                            tempFilteredList.add(new SearchMovie(movie.backdrop_path,movie.overview,movie.poster_path,movie.title,movie.vote_average,movie.id));
+                            tempFilteredList.add(new SearchMovie(movie.backdrop_path,movie.overview,movie.poster_path,movie.title,movie.vote_average,movie.id, movie.isMovie));
                         }
                     }
 

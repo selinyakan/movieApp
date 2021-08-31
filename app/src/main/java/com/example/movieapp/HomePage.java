@@ -1,5 +1,6 @@
 package com.example.movieapp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.widget.SearchView;
@@ -15,19 +16,29 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
 import com.example.movieapp.adapter.HomeRecyclerAdapter;
 import com.example.movieapp.adapter.SliderMoviesAdapter;
 import com.example.movieapp.model.AllCategory;
 import com.example.movieapp.model.CategoryItem;
-import com.example.movieapp.model.Genre;
 import com.example.movieapp.model.MovieListBaseM;
-import com.example.movieapp.model.Providers;
 import com.example.movieapp.model.SeriesListBaseM;
 import com.example.movieapp.model.SliderMovies;
+import com.example.movieapp.model.User;
 import com.example.movieapp.restapi.IRest;
 import com.example.movieapp.restapi.RetrofitPage;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +62,9 @@ public class HomePage extends AppCompatActivity {
     Timer sliderTimer;
     NestedScrollView nestedScrollView;
     AppBarLayout appBarLayout;
+    FirebaseUser user;
+    FirebaseAuth mAuth;
+    String userID;
     //06.08
     HomeRecyclerAdapter homeRecyclerAdapter;
     RecyclerView homeRecycler;
@@ -58,6 +72,9 @@ public class HomePage extends AppCompatActivity {
     List<AllCategory> allCategoryList = new ArrayList<>();
     List<AllCategory> seriesAllCategoryList = new ArrayList<>();
     List<AllCategory> filmAllCategoryList = new ArrayList<>();
+
+    StorageReference storageReference;
+
 
     //10.08
     private ImageView profilePhoto;
@@ -71,6 +88,12 @@ public class HomePage extends AppCompatActivity {
         appBarLayout = findViewById(R.id.appbar);
         search = findViewById(R.id.src);
         profilePhoto = findViewById(R.id.profile_photo_img);
+        mAuth = FirebaseAuth.getInstance();
+        user = mAuth.getCurrentUser();
+        userID = user.getUid();
+        storageReference = FirebaseStorage.getInstance().getReference();
+
+
     }
 
     @Override
@@ -78,11 +101,16 @@ public class HomePage extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home_page);
         initializeUIElements();
+        getGenreHome();
         prepareDatas();
         setOnClickListener();
         getFunction();
         setSliderMoviesAdapter(homeSliderList);
         setHomeRecycler(allCategoryList);
+
+        StorageReference profileRef = storageReference.child("users/"+user.getUid()+"/profile.jpg");
+        profileRef.getDownloadUrl().addOnSuccessListener(uri -> Picasso.get().load(uri).into(profilePhoto));
+
     }
 
     private void getFunction() {
@@ -94,13 +122,94 @@ public class HomePage extends AppCompatActivity {
             getSeries(String.valueOf(i));
         }
 
-        for(int i = 1; i<3; i++){
-            Random r=new Random(); //random sınıfı
-            int a=r.nextInt(20);
-            getPopularMovies(String.valueOf(a), i);
+    }
+
+    private void getPopularMoviesList(String pageNumber, int i) {
+        Call<MovieListBaseM> call6 = prepareRetrofit().getPopularMovieList(pageNumber);
+        call6.enqueue(new Callback<MovieListBaseM>() {
+            @Override
+            public void onResponse(Call<MovieListBaseM> call6, Response<MovieListBaseM> response) {
+                MovieListBaseM result1 = response.body();
+                String [] genre = new String[3];
+                genre[0] = "";
+                genre[1] = "Önerilenler";
+                genre[2] = "Popülerler";
+
+                if(response.isSuccessful() && result1 != null)
+                {
+                    List<CategoryItem> data1 = new ArrayList<>();
+                    for (int i=0;i<result1.results.size(); i++){
+                        data1.add(new CategoryItem("https://image.tmdb.org/t/p/w500" +result1.results.get(i).poster_path,
+                                result1.results.get(i).title, result1.results.get(i).id,true));
+
+                    }
+                    allCategoryList.add(new AllCategory(i, "*"+ genre[i].toString(), data1));
+                    setHomeRecycler(allCategoryList);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<MovieListBaseM> call6, Throwable t) {
+                Log.d("","error catched at getPatientTCNo: "+t);
+            }
+        });
+    }
+
+    private void getGenreHome(){
+        user = mAuth.getCurrentUser();
+        DatabaseReference recomRef = FirebaseDatabase.getInstance().getReference("users").child(user.getUid());
+        recomRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if(snapshot.exists()){
+                    User user = snapshot.getValue(User.class);
+                    if(user.getFavoriteMovies() == null){
+                        for(int i = 1; i<3; i++){
+                            Random r=new Random(); //random sınıfı
+                            int a=r.nextInt(40);
+                            getPopularMoviesList(String.valueOf(a), i);
+                        }
+                    }else{
+                        transferMovie(user.getFavoriteMovies());
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                System.out.println("The read failed: " + error.getCode());
+            }
+        });
+    }
+
+    private void transferMovie(ArrayList<String> favoriteMovies) {
+        ArrayList<Integer> link = new ArrayList<>();
+        for (int i = 0; i < favoriteMovies.size(); i++) {
+            Call<MovieListBaseM> call = prepareRetrofit().getMovieCredits(favoriteMovies.get(i));
+            call.enqueue(new Callback<MovieListBaseM>() {
+                @Override
+                public void onResponse(Call<MovieListBaseM> call, Response<MovieListBaseM> response) {
+                    MovieListBaseM result = response.body();
+                    if (response.isSuccessful() && result != null) {
+                        for (int i=0;i<result.genres.size();i++){
+                            link.add(result.genres.get(i).id);
+                        }
+                        transferGenre(link);
+                    }
+                }
+                @Override
+                public void onFailure(Call<MovieListBaseM> call, Throwable t) {
+                    Log.d("", "error catched at getPatientTCNo: " + t);
+                }
+            });
         }
+    }
 
-
+    private void transferGenre(ArrayList<Integer> link) {
+        for(int i = 1; i<2; i++){
+            Random r=new Random(); //random sınıfı
+            int a=r.nextInt(link.size());
+            getPopularMovies(String.valueOf(link.get(a)), i);
+        }
     }
 
     private void prepareDatas(){
@@ -198,15 +307,14 @@ public class HomePage extends AppCompatActivity {
     }
 
     private void getPopularMovies(String pageNumber, int i){
-        Call<MovieListBaseM> call6 = prepareRetrofit().getPopularMovieList(pageNumber);
+        Call<MovieListBaseM> call6 = prepareRetrofit().getPopularList(pageNumber);
         call6.enqueue(new Callback<MovieListBaseM>() {
             @Override
             public void onResponse(Call<MovieListBaseM> call6, Response<MovieListBaseM> response) {
                 MovieListBaseM result1 = response.body();
-                String [] genre = new String[3];
+                String [] genre = new String[2];
                 genre[0] = "";
                 genre[1] = "Önerilenler";
-                genre[2] = "Popülerler";
 
                 if(response.isSuccessful() && result1 != null)
                 {
@@ -275,7 +383,6 @@ public class HomePage extends AppCompatActivity {
 
     }
 
-
     class AutoSlider extends TimerTask{
         @Override
         public void run() {
@@ -290,7 +397,6 @@ public class HomePage extends AppCompatActivity {
 
         }
     }
-
 
     //AllCategory kategorileri temsil ediyor
     public void setHomeRecycler(List<AllCategory> allCategoryList){
@@ -310,4 +416,3 @@ public class HomePage extends AppCompatActivity {
     }
 
 }
-

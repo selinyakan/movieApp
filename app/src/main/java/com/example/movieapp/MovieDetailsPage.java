@@ -59,18 +59,16 @@ public class MovieDetailsPage extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if(snapshot.exists()){
-                    if (snapshot.getValue(User.class).getFavorities() != null)
+                    if (snapshot.getValue(User.class).getFavoriteMovies() != null)
                     {
-                        allFavoriteMovies = snapshot.getValue(User.class).getFavorities();
-                        Log.d("","SIZE IS: "+ allFavoriteMovies.size());
+                        allFavoriteMovies = snapshot.getValue(User.class).getFavoriteMovies();
+
                     }
                     else
                     {
                         allFavoriteMovies = new ArrayList<>();
-                        Log.d("","newww newww: "+ allFavoriteMovies.size());
+                        Log.d("","NEWWW NEWWW: "+ allFavoriteMovies.size());
                     }
-
-                   //tv serileri için aynı mantık uygulanacak......
                 }
             }
             @Override
@@ -80,11 +78,39 @@ public class MovieDetailsPage extends AppCompatActivity {
         });
     }
 
+    private void readFavoritiesSeries() {
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getUid());
+        userRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if(snapshot.exists()){
+                    if (snapshot.getValue(User.class).getFavoriteTvSeries() != null)
+                    {
+                        allFavoriteTvSeries = snapshot.getValue(User.class).getFavoriteTvSeries();
+
+                    }
+                    else
+                    {
+                        allFavoriteTvSeries = new ArrayList<>();
+                        Log.d("","NEWWW NEWWW: "+ allFavoriteTvSeries.size());
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                System.out.println("The read failed: " + error.getCode());
+            }
+        });
+    }
 
     private void addNewFavoriteMovie(String id){
         FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
 
         allFavoriteMovies.add(id);
+        FirebaseDatabase.getInstance().getReference("users")
+                .child(mAuth.getUid()).child("favoriteMovies").child(String.valueOf(allFavoriteMovies.size() - 1)).setValue(allFavoriteMovies.get(allFavoriteMovies.size() - 1));
+
+        //allFavoriteTvSeries.add(id);
 
         /*
           if(favoriButton.getTag().equals("save"))
@@ -103,7 +129,7 @@ public class MovieDetailsPage extends AppCompatActivity {
         }
          */
 
-        if (isMovie)
+       /* if (isMovie)
         {
             FirebaseDatabase.getInstance().getReference("users")
                     .child(mAuth.getUid()).child("favoriteMovies").child(String.valueOf(allFavoriteMovies.size() - 1)).setValue(allFavoriteMovies.get(allFavoriteMovies.size() - 1));
@@ -111,49 +137,148 @@ public class MovieDetailsPage extends AppCompatActivity {
         else
         {
             FirebaseDatabase.getInstance().getReference("users")
-                    .child(mAuth.getUid()).child("favoriteTvSeries").child(String.valueOf(allFavoriteMovies.size() - 1)).setValue(allFavoriteMovies.get(allFavoriteMovies.size() - 1));
-        }
+                    .child(mAuth.getUid()).child("favoriteTvSeries").child(String.valueOf(allFavoriteTvSeries.size() - 1)).setValue(allFavoriteTvSeries.get(allFavoriteTvSeries.size() - 1));
+        }*/
     }
 
+    private void addNewFavoriteSeries(String id) {
+        FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
+
+        allFavoriteTvSeries.add(id);
+        FirebaseDatabase.getInstance().getReference("users")
+                .child(mAuth.getUid()).child("favoriteTvSeries").child(String.valueOf(allFavoriteTvSeries.size() - 1)).setValue(allFavoriteTvSeries.get(allFavoriteTvSeries.size() - 1));
+
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_detail);
-        readFavoritiesMovies();
         initializeUIElements();
         String id = getIntent().getStringExtra("movieId");
         isMovie = getIntent().getBooleanExtra("isMovie",false);
 
+        if (isMovie)
+        {
+            setupRvCast(id);
+            getMovieList(id);
+            getProviders(id);
+            getDirector(id);
+            getGenre(id);
+            readFavoritiesMovies();
+        }
+        else
+        {
+            setupRvCastSeries(id);
+            getSeriesList(id);
+            getDirectorSeries(id);
+            getProvidersSeries(id);
+            getGenreSeries(id);
+            readFavoritiesSeries();
+        }
+
         favoriButton.setOnClickListener(v->{
-            if (allFavoriteMovies != null)
-            {
-                addNewFavoriteMovie(id);
+            if(isMovie){
+                saveToList();
+                if (allFavoriteMovies != null)
+                {
+                    addNewFavoriteMovie(id);
+                }
+                else
+                {
+                    Toast.makeText(this, "Favori listeniz alınırken bir hata oluştu.", Toast.LENGTH_SHORT).show();
+                }
+            }else{
+                saveToSeries();
+                if (allFavoriteTvSeries != null)
+                {
+                    addNewFavoriteSeries(id);
+                }
+                else
+                {
+                    Toast.makeText(this, "Favori listeniz alınırken bir hata oluştu.", Toast.LENGTH_SHORT).show();
+                }
             }
-            else
-            {
-                Toast.makeText(this, "Favori listeniz alınırken bir hata oluştu.", Toast.LENGTH_SHORT).show();
-            }
+
 
         });
 
-        setupRvCast(id);
-        //setupRvCastSeries(id);
-        //getSeriesList(id);
-        getMovieList(id);
-        getProviders(id);
-        getDirector(id);
-        //getDirectorSeries(id);
-        getGenre(id);
-        saveToList();
     }
 
-    private void saveToList(){
-        ArrayList<String> favoriteList = new ArrayList();
+    private void removeFavoriteSeries(String id) {
+        FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
+
+        allFavoriteTvSeries.remove(id);
+        FirebaseDatabase.getInstance().getReference("users").child(mAuth.getUid()).child("favoriteTvSeries").child(id).removeValue();
+    }
+
+    private void removeFavoriteMovie(String id) {
+        FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
+
+        allFavoriteMovies.remove(id);
+        FirebaseDatabase.getInstance().getReference("users").child(mAuth.getUid()).child("favoriteMovies").child(id).removeValue();
+    }
+
+    private void saveToSeries() {
         String id = getIntent().getStringExtra("movieId");
         ImageButton movieLike = findViewById(R.id.favoriButton);
         FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
         DatabaseReference saveRef = FirebaseDatabase.getInstance().getReference("users");
-        saveRef.child(mAuth.getUid()).child("favorites").child(id);
+        saveRef.child(mAuth.getUid()).child("favoriteTvSeries").child(id);
+        saveRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.child(id).exists()){
+                    favoriButton.setImageResource(R.drawable.heart2);
+                    movieLike.setTag("saved");
+                }else{
+                    movieLike.setImageResource(R.drawable.heart);
+                    movieLike.setTag("save");
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+
+    private void getGenreSeries(String id) {
+        List<Genre> mData3 = new ArrayList<>();
+        Call<SeriesListBaseM> call = prepareRetrofit().getSeriesCredits(id);
+        call.enqueue(new Callback<SeriesListBaseM>() {
+
+            @Override
+            public void onResponse(Call<SeriesListBaseM> call, Response<SeriesListBaseM> response) {
+                SeriesListBaseM result = response.body();
+
+                if(response.isSuccessful() && result != null)
+                {
+                    for (int i=0;i<result.genres.size();i++){
+                        mData3.add(new Genre(result.genres.get(i).name));
+
+                    }
+                    GenreAdapter genreAdapter = new GenreAdapter(MovieDetailsPage.this, mData3);
+                    genre_recycler.setAdapter(genreAdapter);
+                    genre_recycler.setLayoutManager(new LinearLayoutManager(MovieDetailsPage.this, LinearLayoutManager.HORIZONTAL, false));
+
+
+
+                }
+            }
+
+            @Override
+            public void onFailure(Call<SeriesListBaseM> call, Throwable t) {
+                Log.d("","error catched at getPatientTCNo: "+t);
+            }
+        });
+    }
+
+    private void saveToList(){
+        String id = getIntent().getStringExtra("movieId");
+        ImageButton movieLike = findViewById(R.id.favoriButton);
+        FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
+        DatabaseReference saveRef = FirebaseDatabase.getInstance().getReference("users");
+        saveRef.child(mAuth.getUid()).child("favoriteMovies").child(id);
         saveRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -248,7 +373,18 @@ public class MovieDetailsPage extends AppCompatActivity {
 
                 if(response.isSuccessful() && result != null)
                 {
-                    directorName.setText(result.crew.get(0).original_name);
+                    try {
+                        if(result.crew != null){
+                            directorName.setText(result.crew.get(0).original_name);
+                        }
+                        else{
+                            directorName.setText("");
+                        }
+
+                    }catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
                 }
             }
 
@@ -270,28 +406,70 @@ public class MovieDetailsPage extends AppCompatActivity {
 
                 if(response.isSuccessful() && result != null)
                 {
-                   try {
-                       if (result.results.TR.flatrate != null){
-                           mData3.add(new Flatrate("https://image.tmdb.org/t/p/w500"+result.results.TR.flatrate.get(0).logo_path));
-                       }
-                       else if(result.results.TR.flatrate_and_buy != null){
-                           mData3.add(new Flatrate("https://image.tmdb.org/t/p/w500"+result.results.TR.flatrate_and_buy.get(0).logo_path));
-                       }
-                       else if(result.results.TR.buy != null){
-                           mData3.add(new Flatrate("https://image.tmdb.org/t/p/w500"+result.results.TR.buy.get(0).logo_path));
-                       }
-                       else if(result.results.TR.rent != null){
-                           mData3.add(new Flatrate("https://image.tmdb.org/t/p/w500"+result.results.TR.rent.get(0).logo_path));
-                       }
-                   } catch (Exception e) {
-                       e.printStackTrace();
-                       //mData3.add(new Flatrate("https://cf.kizlarsoruyor.com/q10343625/235d76b8-b64c-4e0b-8f51-7f30543e43d2-m.jpg"));
-                   }
+                    try {
+                        if (result.results.TR.flatrate != null){
+                            mData3.add(new Flatrate("https://image.tmdb.org/t/p/w500"+result.results.TR.flatrate.get(0).logo_path));
+                        }
+                        else if(result.results.TR.flatrate_and_buy != null){
+                            mData3.add(new Flatrate("https://image.tmdb.org/t/p/w500"+result.results.TR.flatrate_and_buy.get(0).logo_path));
+                        }
+                        else if(result.results.TR.buy != null){
+                            mData3.add(new Flatrate("https://image.tmdb.org/t/p/w500"+result.results.TR.buy.get(0).logo_path));
+                        }
+                        else if(result.results.TR.rent != null){
+                            mData3.add(new Flatrate("https://image.tmdb.org/t/p/w500"+result.results.TR.rent.get(0).logo_path));
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        //mData3.add(new Flatrate("https://cf.kizlarsoruyor.com/q10343625/235d76b8-b64c-4e0b-8f51-7f30543e43d2-m.jpg"));
+                    }
                 }
-                    KanalAdapter kanalAdapter = new KanalAdapter(MovieDetailsPage.this, mData3);
-                    castRrcy3.setAdapter(kanalAdapter);
-                    castRrcy3.setLayoutManager(new LinearLayoutManager(MovieDetailsPage.this, LinearLayoutManager.HORIZONTAL, false));
+                KanalAdapter kanalAdapter = new KanalAdapter(MovieDetailsPage.this, mData3);
+                castRrcy3.setAdapter(kanalAdapter);
+                castRrcy3.setLayoutManager(new LinearLayoutManager(MovieDetailsPage.this, LinearLayoutManager.HORIZONTAL, false));
+            }
+
+            @Override
+            public void onFailure(Call<ProviderList> call, Throwable t) {
+                Log.d("","error catched at getPatientTCNo: "+t);
+            }
+        });
+
+    }
+
+    private void getProvidersSeries(String id) {
+        List<Flatrate> mData3 = new ArrayList<>();
+        Call<ProviderList> call = prepareRetrofit().getMovieCreditsProvidersSeries(id);
+        call.enqueue(new Callback<ProviderList>() {
+
+            @Override
+            public void onResponse(Call<ProviderList> call, Response<ProviderList> response) {
+                ProviderList result = response.body();
+
+                if(response.isSuccessful() && result != null)
+                {
+                    try {
+                        if (result.results.TR.flatrate != null){
+                            mData3.add(new Flatrate("https://image.tmdb.org/t/p/w500"+result.results.TR.flatrate.get(0).logo_path));
+                        }
+                        else if(result.results.TR.flatrate_and_buy != null){
+                            mData3.add(new Flatrate("https://image.tmdb.org/t/p/w500"+result.results.TR.flatrate_and_buy.get(0).logo_path));
+                        }
+                        else if(result.results.TR.buy != null){
+                            mData3.add(new Flatrate("https://image.tmdb.org/t/p/w500"+result.results.TR.buy.get(0).logo_path));
+                        }
+                        else if(result.results.TR.rent != null){
+                            mData3.add(new Flatrate("https://image.tmdb.org/t/p/w500"+result.results.TR.rent.get(0).logo_path));
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        //mData3.add(new Flatrate("https://cf.kizlarsoruyor.com/q10343625/235d76b8-b64c-4e0b-8f51-7f30543e43d2-m.jpg"));
+                    }
                 }
+                KanalAdapter kanalAdapter = new KanalAdapter(MovieDetailsPage.this, mData3);
+                castRrcy3.setAdapter(kanalAdapter);
+                castRrcy3.setLayoutManager(new LinearLayoutManager(MovieDetailsPage.this, LinearLayoutManager.HORIZONTAL, false));
+            }
 
             @Override
             public void onFailure(Call<ProviderList> call, Throwable t) {
