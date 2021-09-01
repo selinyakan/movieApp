@@ -101,7 +101,7 @@ public class HomePage extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home_page);
         initializeUIElements();
-        getGenreHome();
+        //getGenreHome();
         prepareDatas();
         setOnClickListener();
         getFunction();
@@ -120,6 +120,11 @@ public class HomePage extends AppCompatActivity {
 
         for(int i = 1; i<10; i++){
             getSeries(String.valueOf(i));
+        }
+        for(int i = 1; i<3; i++){
+            Random r=new Random(); //random sınıfı
+            int a=r.nextInt(40);
+            getPopularMoviesList(String.valueOf(a), i);
         }
 
     }
@@ -170,7 +175,7 @@ public class HomePage extends AppCompatActivity {
                             getPopularMoviesList(String.valueOf(a), i);
                         }
                     }else{
-                        transferMovie(user.getFavoriteMovies());
+                        // transferMovie(user.getFavoriteMovies());
                     }
                 }
             }
@@ -179,37 +184,6 @@ public class HomePage extends AppCompatActivity {
                 System.out.println("The read failed: " + error.getCode());
             }
         });
-    }
-
-    private void transferMovie(ArrayList<String> favoriteMovies) {
-        ArrayList<Integer> link = new ArrayList<>();
-        for (int i = 0; i < favoriteMovies.size(); i++) {
-            Call<MovieListBaseM> call = prepareRetrofit().getMovieCredits(favoriteMovies.get(i));
-            call.enqueue(new Callback<MovieListBaseM>() {
-                @Override
-                public void onResponse(Call<MovieListBaseM> call, Response<MovieListBaseM> response) {
-                    MovieListBaseM result = response.body();
-                    if (response.isSuccessful() && result != null) {
-                        for (int i=0;i<result.genres.size();i++){
-                            link.add(result.genres.get(i).id);
-                        }
-                        transferGenre(link);
-                    }
-                }
-                @Override
-                public void onFailure(Call<MovieListBaseM> call, Throwable t) {
-                    Log.d("", "error catched at getPatientTCNo: " + t);
-                }
-            });
-        }
-    }
-
-    private void transferGenre(ArrayList<Integer> link) {
-        for(int i = 1; i<2; i++){
-            Random r=new Random(); //random sınıfı
-            int a=r.nextInt(link.size());
-            getPopularMovies(String.valueOf(link.get(a)), i);
-        }
     }
 
     private void prepareDatas(){
