@@ -10,7 +10,6 @@ import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.example.movieapp.adapter.CastAdapter;
@@ -48,27 +47,30 @@ public class MovieDetailsPage extends AppCompatActivity {
     private CastAdapter castAdapter;
     ImageButton favoriButton;
 
-    private ArrayList<String> allFavoriteMovies;
-    private ArrayList<String> allFavoriteTvSeries;
+    private ArrayList<String> allFavoriteMovies = new ArrayList<>();
+    private ArrayList<String> allFavoriteTvSeries = new ArrayList<>();
     private boolean isMovie;
+    private String contentId;
 
+    private User user;
 
-    private void readFavoritiesMovies(){
+    private void readContent(){
         DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getUid());
         userRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if(snapshot.exists()){
-                    if (snapshot.getValue(User.class).getFavoriteMovies() != null)
-                    {
-                        allFavoriteMovies = snapshot.getValue(User.class).getFavoriteMovies();
+                    user = snapshot.getValue(User.class);
+                   prepareFavoriteList();
 
-                    }
-                    else
-                    {
-                        allFavoriteMovies = new ArrayList<>();
-                        Log.d("","NEWWW NEWWW: "+ allFavoriteMovies.size());
-                    }
+                   if (isMovie)
+                   {
+                       checkFavoriteContent(allFavoriteMovies);
+                   }
+                   else
+                   {
+                       checkFavoriteContent(allFavoriteTvSeries);
+                   }
                 }
             }
             @Override
@@ -78,173 +80,158 @@ public class MovieDetailsPage extends AppCompatActivity {
         });
     }
 
-    private void readFavoritiesSeries() {
-        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getUid());
-        userRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if(snapshot.exists()){
-                    if (snapshot.getValue(User.class).getFavoriteTvSeries() != null)
-                    {
-                        allFavoriteTvSeries = snapshot.getValue(User.class).getFavoriteTvSeries();
-
-                    }
-                    else
-                    {
-                        allFavoriteTvSeries = new ArrayList<>();
-                        Log.d("","NEWWW NEWWW: "+ allFavoriteTvSeries.size());
-                    }
-                }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                System.out.println("The read failed: " + error.getCode());
-            }
-        });
-    }
-
-    private void addNewFavoriteMovie(String id){
-        FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
-
-        allFavoriteMovies.add(id);
-        FirebaseDatabase.getInstance().getReference("users")
-                .child(mAuth.getUid()).child("favoriteMovies").child(String.valueOf(allFavoriteMovies.size() - 1)).setValue(allFavoriteMovies.get(allFavoriteMovies.size() - 1));
-
-        //allFavoriteTvSeries.add(id);
-
-        /*
-          if(favoriButton.getTag().equals("save"))
+    private void prepareFavoriteList(){
+        if (isMovie)
         {
-
-        }
-        else
-        {
-            for (int i=0;i<allFavorites.size();i++)
+            if (user.getFavoriteMovies() != null)
             {
-                if (allFavorites.get(i).equals(id))
-                {
-                    allFavorites.remove(i);
-                }
-            }
-        }
-         */
 
-       /* if (isMovie)
-        {
-            FirebaseDatabase.getInstance().getReference("users")
-                    .child(mAuth.getUid()).child("favoriteMovies").child(String.valueOf(allFavoriteMovies.size() - 1)).setValue(allFavoriteMovies.get(allFavoriteMovies.size() - 1));
+                allFavoriteMovies = user.getFavoriteMovies();
+                Log.d("","LOGLOGLOG:: "+user.getFavoriteMovies().get(0));
+            }
         }
         else
         {
-            FirebaseDatabase.getInstance().getReference("users")
-                    .child(mAuth.getUid()).child("favoriteTvSeries").child(String.valueOf(allFavoriteTvSeries.size() - 1)).setValue(allFavoriteTvSeries.get(allFavoriteTvSeries.size() - 1));
-        }*/
+            if (user.getFavoriteTvSeries() != null)
+            {
+                allFavoriteTvSeries = user.getFavoriteTvSeries();
+                Log.d("","LOGLOGLO22222222G");
+            }
+        }
     }
 
-    private void addNewFavoriteSeries(String id) {
-        FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
-
-        allFavoriteTvSeries.add(id);
-        FirebaseDatabase.getInstance().getReference("users")
-                .child(mAuth.getUid()).child("favoriteTvSeries").child(String.valueOf(allFavoriteTvSeries.size() - 1)).setValue(allFavoriteTvSeries.get(allFavoriteTvSeries.size() - 1));
-
-    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_detail);
         initializeUIElements();
-        String id = getIntent().getStringExtra("movieId");
+        contentId = getIntent().getStringExtra("movieId");
         isMovie = getIntent().getBooleanExtra("isMovie",false);
+
 
         if (isMovie)
         {
-            setupRvCast(id);
-            getMovieList(id);
-            getProviders(id);
-            getDirector(id);
-            getGenre(id);
-            readFavoritiesMovies();
+            setupRvCast();
+            getMovieList();
+            getProviders();
+            getDirector();
+            getGenre();
+            readContent();
+            favoriButton.setTag("save");
+
+            favoriButton.setOnClickListener(v-> {
+                if (isFavoriteButtonEmpthy().equals("save"))
+                {
+                    addContentToDatabase();
+                }
+                else
+                {
+                    deleteContentFromArrayList(allFavoriteMovies);
+                    deleteContentFromDatabase();
+                }
+            });
+
+
         }
         else
         {
-            setupRvCastSeries(id);
-            getSeriesList(id);
-            getDirectorSeries(id);
-            getProvidersSeries(id);
-            getGenreSeries(id);
-            readFavoritiesSeries();
+            setupRvCastSeries();
+            getSeriesList();
+            getDirectorSeries();
+            getProvidersSeries();
+            getGenreSeries();
+            readContent();
+            favoriButton.setTag("save");
+
+            favoriButton.setOnClickListener(v-> {
+                if (isFavoriteButtonEmpthy().equals("save"))
+                {
+                    addContentToDatabase();
+                }
+                else
+                {
+                    deleteContentFromArrayList(allFavoriteTvSeries);
+                    deleteContentFromDatabase();
+                }
+
+            });
+
+            checkFavoriteContent(allFavoriteTvSeries);
+        }
+    }
+
+    private void deleteContentFromArrayList(ArrayList<String> content){
+        for (int i=0;i<content.size();i++)
+        {
+            if (content.get(i).equals(contentId))
+            {
+                content.remove(i);
+            }
+        }
+    }
+
+    private void checkFavoriteContent(ArrayList<String> content){
+
+
+        for (int i=0;i<content.size();i++)
+        {
+            Log.d("","IDIDID "+contentId);
+            Log.d("","item is is is : "+content.get(i));
+            if (content.get(i).equals(contentId))
+            {
+                favoriButton.setImageResource(R.drawable.ic_fill_heart);
+                favoriButton.setTag("saved");
+            }
+        }
+    }
+
+    private String isFavoriteButtonEmpthy(){
+       return favoriButton.getTag().toString();
+    }
+
+    private void changeIconOfFavoriteButton(){
+        if (isFavoriteButtonEmpthy().equals("save"))
+        {
+            favoriButton.setImageResource(R.drawable.ic_fill_heart);
+            favoriButton.setTag("saved");
+        }
+        else {
+            favoriButton.setImageResource(R.drawable.ic_empthy_heart);
+            favoriButton.setTag("save");
+        }
+    }
+
+    private void deleteContentFromDatabase(){
+        FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
+        FirebaseDatabase.getInstance().getReference("users")
+                .child(mAuth.getUid()).child("favoriteMovies").setValue(allFavoriteMovies);
+        changeIconOfFavoriteButton();
+    }
+
+
+    private void addContentToDatabase(){
+        FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (isMovie)
+        {
+            allFavoriteMovies.add(contentId);
+            FirebaseDatabase.getInstance().getReference("users")
+                    .child(mAuth.getUid()).child("favoriteMovies").child(String.valueOf(allFavoriteMovies.size() - 1)).setValue(allFavoriteMovies.get(allFavoriteMovies.size() - 1));
+        }
+        else
+        {
+            allFavoriteTvSeries.add(contentId);
+            FirebaseDatabase.getInstance().getReference("users")
+                    .child(mAuth.getUid()).child("favoriteTvSeries").child(String.valueOf(allFavoriteTvSeries.size() - 1)).setValue(allFavoriteTvSeries.get(allFavoriteTvSeries.size() - 1));
         }
 
-        favoriButton.setOnClickListener(v->{
-            if(isMovie){
-                saveToList();
-                if (allFavoriteMovies != null)
-                {
-                    addNewFavoriteMovie(id);
-                }
-                else
-                {
-                    Toast.makeText(this, "Favori listeniz alınırken bir hata oluştu.", Toast.LENGTH_SHORT).show();
-                }
-            }else{
-                saveToSeries();
-                if (allFavoriteTvSeries != null)
-                {
-                    addNewFavoriteSeries(id);
-                }
-                else
-                {
-                    Toast.makeText(this, "Favori listeniz alınırken bir hata oluştu.", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-
-        });
-
+        changeIconOfFavoriteButton();
     }
 
-    private void removeFavoriteSeries(String id) {
-        FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
 
-        allFavoriteTvSeries.remove(id);
-        FirebaseDatabase.getInstance().getReference("users").child(mAuth.getUid()).child("favoriteTvSeries").child(id).removeValue();
-    }
-
-    private void removeFavoriteMovie(String id) {
-        FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
-
-        allFavoriteMovies.remove(id);
-        FirebaseDatabase.getInstance().getReference("users").child(mAuth.getUid()).child("favoriteMovies").child(id).removeValue();
-    }
-
-    private void saveToSeries() {
-        String id = getIntent().getStringExtra("movieId");
-        ImageButton movieLike = findViewById(R.id.favoriButton);
-        FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
-        DatabaseReference saveRef = FirebaseDatabase.getInstance().getReference("users");
-        saveRef.child(mAuth.getUid()).child("favoriteTvSeries").child(id);
-        saveRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.child(id).exists()){
-                    favoriButton.setImageResource(R.drawable.heart2);
-                    movieLike.setTag("saved");
-                }else{
-                    movieLike.setImageResource(R.drawable.heart);
-                    movieLike.setTag("save");
-                }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-    }
-
-    private void getGenreSeries(String id) {
+    private void getGenreSeries() {
         List<Genre> mData3 = new ArrayList<>();
-        Call<SeriesListBaseM> call = prepareRetrofit().getSeriesCredits(id);
+        Call<SeriesListBaseM> call = prepareRetrofit().getSeriesCredits(contentId);
         call.enqueue(new Callback<SeriesListBaseM>() {
 
             @Override
@@ -273,30 +260,6 @@ public class MovieDetailsPage extends AppCompatActivity {
         });
     }
 
-    private void saveToList(){
-        String id = getIntent().getStringExtra("movieId");
-        ImageButton movieLike = findViewById(R.id.favoriButton);
-        FirebaseUser mAuth = FirebaseAuth.getInstance().getCurrentUser();
-        DatabaseReference saveRef = FirebaseDatabase.getInstance().getReference("users");
-        saveRef.child(mAuth.getUid()).child("favoriteMovies").child(id);
-        saveRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.child(id).exists()){
-                    favoriButton.setImageResource(R.drawable.heart2);
-                    movieLike.setTag("saved");
-                }else{
-                    movieLike.setImageResource(R.drawable.heart);
-                    movieLike.setTag("save");
-                }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-    }
-
     private void initializeUIElements() {
         img = findViewById(R.id.item_image);
         img2 = findViewById(R.id.detail_movie_cover);
@@ -311,9 +274,9 @@ public class MovieDetailsPage extends AppCompatActivity {
         favoriButton = findViewById(R.id.favoriButton);
     }
 
-    private void getGenre(String id) {
+    private void getGenre() {
         List<Genre> mData3 = new ArrayList<>();
-        Call<MovieListBaseM> call = prepareRetrofit().getMovieCredits(id);
+        Call<MovieListBaseM> call = prepareRetrofit().getMovieCredits(contentId);
         call.enqueue(new Callback<MovieListBaseM>() {
 
             @Override
@@ -342,8 +305,8 @@ public class MovieDetailsPage extends AppCompatActivity {
         });
     }
 
-    private void getDirector(String id) {
-        Call<MovieListBaseM> call = prepareRetrofit().getMovieCreditsCasts(id);
+    private void getDirector() {
+        Call<MovieListBaseM> call = prepareRetrofit().getMovieCreditsCasts(contentId);
         call.enqueue(new Callback<MovieListBaseM>() {
 
             @Override
@@ -363,8 +326,8 @@ public class MovieDetailsPage extends AppCompatActivity {
         });
     }
 
-    private void getDirectorSeries(String id) {
-        Call<SeriesListBaseM> call = prepareRetrofit().getSeriesCreditsCasts(id);
+    private void getDirectorSeries() {
+        Call<SeriesListBaseM> call = prepareRetrofit().getSeriesCreditsCasts(contentId);
         call.enqueue(new Callback<SeriesListBaseM>() {
 
             @Override
@@ -395,9 +358,9 @@ public class MovieDetailsPage extends AppCompatActivity {
         });
     }
 
-    private void getProviders(String id) {
+    private void getProviders() {
         List<Flatrate> mData3 = new ArrayList<>();
-        Call<ProviderList> call = prepareRetrofit().getMovieCreditsProviders(id);
+        Call<ProviderList> call = prepareRetrofit().getMovieCreditsProviders(contentId);
         call.enqueue(new Callback<ProviderList>() {
 
             @Override
@@ -437,9 +400,9 @@ public class MovieDetailsPage extends AppCompatActivity {
 
     }
 
-    private void getProvidersSeries(String id) {
+    private void getProvidersSeries() {
         List<Flatrate> mData3 = new ArrayList<>();
-        Call<ProviderList> call = prepareRetrofit().getMovieCreditsProvidersSeries(id);
+        Call<ProviderList> call = prepareRetrofit().getMovieCreditsProvidersSeries(contentId);
         call.enqueue(new Callback<ProviderList>() {
 
             @Override
@@ -479,10 +442,10 @@ public class MovieDetailsPage extends AppCompatActivity {
 
     }
 
-    private void setupRvCast(String id) {
+    private void setupRvCast() {
 
         List<Cast> mData2 = new ArrayList<>();
-        Call<MovieListBaseM> call = prepareRetrofit().getMovieCreditsCasts(id);
+        Call<MovieListBaseM> call = prepareRetrofit().getMovieCreditsCasts(contentId);
         call.enqueue(new Callback<MovieListBaseM>() {
 
             @Override
@@ -511,10 +474,10 @@ public class MovieDetailsPage extends AppCompatActivity {
 
     }
 
-    private void setupRvCastSeries(String id) {
+    private void setupRvCastSeries() {
 
         List<Cast> mData2 = new ArrayList<>();
-        Call<SeriesListBaseM> call = prepareRetrofit().getSeriesCreditsCasts(id);
+        Call<SeriesListBaseM> call = prepareRetrofit().getSeriesCreditsCasts(contentId);
         call.enqueue(new Callback<SeriesListBaseM>() {
 
             @Override
@@ -541,8 +504,8 @@ public class MovieDetailsPage extends AppCompatActivity {
         });
     }
 
-    private void getMovieList(String id){
-        Call<MovieListBaseM> call = prepareRetrofit().getMovieCredits(id);
+    private void getMovieList(){
+        Call<MovieListBaseM> call = prepareRetrofit().getMovieCredits(contentId);
         call.enqueue(new Callback<MovieListBaseM>() {
 
             @Override
@@ -565,8 +528,8 @@ public class MovieDetailsPage extends AppCompatActivity {
         });
     }
 
-    private void getSeriesList(String id2){
-        Call<SeriesListBaseM> call = prepareRetrofit().getSeriesCredits(id2);
+    private void getSeriesList(){
+        Call<SeriesListBaseM> call = prepareRetrofit().getSeriesCredits(contentId);
         call.enqueue(new Callback<SeriesListBaseM>() {
 
             @Override

@@ -250,10 +250,12 @@ public class UserProfileActivity extends AppCompatActivity {
 
         });
     }
+
     public static IRest prepareRetrofit(){
         Retrofit retrofit = RetrofitPage.getRetrofit();
         return retrofit.create(IRest.class);
     }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @androidx.annotation.Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);

@@ -209,7 +209,7 @@
                     android:id="@+id/favoriButton"
                     android:layout_width="64dp"
                     android:layout_height="64dp"
-                    android:background="@drawable/heart"
+                    android:background="@drawable/ic_empthy_heart"
                     android:backgroundTint="@color/white"
                     android:padding="10dp" />
 
