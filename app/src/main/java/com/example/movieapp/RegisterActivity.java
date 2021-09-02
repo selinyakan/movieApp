@@ -37,7 +37,9 @@ import java.util.Map;
 
 public class RegisterActivity extends AppCompatActivity {
     EditText fullName,userName,email, password;
-    Button signIn, signUp;
+    //Button signIn;
+    Button signUp;
+    TextView signIn;
     //17.08
     FirebaseAuth mAuth;
     //18.08
@@ -70,10 +72,10 @@ public class RegisterActivity extends AppCompatActivity {
             finish();
         } */
 
-        signIn.setOnClickListener(v -> {
+      /*  signIn.setOnClickListener(v -> {
             startActivity(new Intent(getApplicationContext(),MainActivity.class));
 
-        });
+        }); */
         //24.08 //CloudFirestore register
          /*
         signUp.setOnClickListener(v -> {
@@ -140,6 +142,10 @@ public class RegisterActivity extends AppCompatActivity {
                             });
 
         }); */
+
+    }
+    public void loginButton(View v){
+        startActivity(new Intent(getApplicationContext(),MainActivity.class));
 
     }
 

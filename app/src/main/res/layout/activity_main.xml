@@ -50,7 +50,7 @@
             android:clickable="true"
             android:onClick="forgetPass"
             android:gravity="right|center_vertical"
-            android:text="Şifremi unuttum..."
+            android:text="Şifremi unuttum...."
             android:textColor="@color/white"
             android:textSize="15sp"
             android:textStyle="italic" />

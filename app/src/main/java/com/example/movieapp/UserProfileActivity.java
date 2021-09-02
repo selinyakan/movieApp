@@ -65,7 +65,7 @@ public class UserProfileActivity extends AppCompatActivity {
     TextView favMovieName;
     ImageView favMovieImg;
     //18.08 Gün Sonu
-    TextView fullName, userName, email;
+    TextView fullName, userName, email,password;
     FirebaseFirestore mStore;
     FirebaseAuth mAuth;
     String userID;
@@ -89,6 +89,7 @@ public class UserProfileActivity extends AppCompatActivity {
         userName = findViewById(R.id.profile_username);
         email = findViewById(R.id.profile_email);
         profilePhoto = findViewById(R.id.user_profil_photo);
+        password = findViewById(R.id.password);
 
         mStore = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
@@ -202,6 +203,7 @@ public class UserProfileActivity extends AppCompatActivity {
                     fullName.setText(user.getFullName());
                     userName.setText(user.getUserName());
                     email.setText(user.getEmail());
+                    password.setText(user.getPassword());
                     if(user.getFavoriteMovies() == null || user.getFavoriteTvSeries() == null){
 
                     }else{
@@ -238,6 +240,8 @@ public class UserProfileActivity extends AppCompatActivity {
             intent.putExtra("fullName",fullName.getText().toString());
             intent.putExtra("userName",userName.getText().toString());
             intent.putExtra("email",email.getText().toString());
+            intent.putExtra("password",password.getText().toString());
+
 
             startActivity(intent);
 

@@ -49,7 +49,7 @@ public class SettingsActivity extends AppCompatActivity {
     public static final String TAG = "TAG";
     //ImageButton exitButton;
     Button exitButton;
-    EditText profileFullName, profileEmail, profileUserName;
+    EditText profileFullName, profileEmail, profileUserName ,profilePassword;
     ImageView profilePhoto;
     FirebaseAuth mAuth;
     FirebaseFirestore mStore;
@@ -61,7 +61,7 @@ public class SettingsActivity extends AppCompatActivity {
     AlertDialog.Builder reset_alert;
     LayoutInflater inflater;
     DatabaseReference databaseRef;
-    String fullName,userName,email;
+    String fullName,userName,email,password;
 
 
     @Override
@@ -75,6 +75,7 @@ public class SettingsActivity extends AppCompatActivity {
         fullName=data.getStringExtra("fullName");
         userName=data.getStringExtra("userName");
         email=data.getStringExtra("email");
+        password = data.getStringExtra("password");
 
         //20.08
         reset_alert= new AlertDialog.Builder(this);
@@ -85,6 +86,7 @@ public class SettingsActivity extends AppCompatActivity {
         profileUserName = findViewById(R.id.settings_username);
         profilePhoto = findViewById(R.id.setting_pp);
         saveBtn = findViewById(R.id.setting_savebutton);
+        profilePassword = findViewById(R.id.settings_password);
         //20.08
         //changePassword = findViewById(R.id.change_password);
 
@@ -95,7 +97,6 @@ public class SettingsActivity extends AppCompatActivity {
         databaseRef = FirebaseDatabase.getInstance().getReference("users");
 
 
-        //bunu eklediğimizde bi önceki sayfadaki fotoğraf settingse de aktarıldı.
         StorageReference profileRef = storageReference.child("users/"+user.getUid()+"/profile.jpg");
         profileRef.getDownloadUrl().addOnSuccessListener(uri -> Picasso.get().load(uri).into(profilePhoto));
 
@@ -147,6 +148,7 @@ public class SettingsActivity extends AppCompatActivity {
         profileFullName.setText(fullName);
         profileUserName.setText(userName);
         profileEmail.setText(email);
+        profilePassword.setText(password);
 
 
         Log.d(TAG,"onCreate: "+ fullName + " " + userName );
@@ -196,7 +198,7 @@ public class SettingsActivity extends AppCompatActivity {
     }//OnCreate Kapanışı
 
     public void update(View v){
-        if (isFullNameChanged()  || isEmailChanged() || isUserNameChanged()){
+        if (isFullNameChanged()  || isEmailChanged() || isUserNameChanged() || isPasswordChanged()){
             Toast.makeText(SettingsActivity.this, "Profil Bilgileri Güncellendi.", Toast.LENGTH_SHORT).show();
         }else{
             Toast.makeText(SettingsActivity.this, "Bilgiler Güncellenemedi", Toast.LENGTH_SHORT).show();
@@ -213,8 +215,15 @@ public class SettingsActivity extends AppCompatActivity {
             return false;
         }
     }
- /*   private boolean isPasswordChanged() {
-    }*/
+   private boolean isPasswordChanged() {
+       if(!password.equals(profilePassword.getText().toString())){
+           databaseRef.child(mAuth.getUid()).child("password").setValue(profilePassword.getText().toString());
+           password = profilePassword.getText().toString();
+           return true;
+       }else{
+           return false;
+       }
+    }
     private boolean isEmailChanged() {
         if(!email.equals(profileEmail.getText().toString())){
             databaseRef.child(mAuth.getUid()).child("email").setValue(profileEmail.getText().toString());
@@ -261,12 +270,7 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                 });
             }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Toast.makeText(getApplicationContext(), "Hata!", Toast.LENGTH_LONG).show();
-            }
-        });
+        }).addOnFailureListener(e -> Toast.makeText(getApplicationContext(), "Hata!", Toast.LENGTH_LONG).show());
     }
 
     public boolean onCreateOptionsMenu(Menu menu){
@@ -282,27 +286,16 @@ public class SettingsActivity extends AppCompatActivity {
         if(item.getItemId()==R.id.deleteAccount){
             reset_alert.setTitle("Hesabı Kalıcı Olarak Sil")
                     .setMessage("Emin misiniz?")
-                    .setPositiveButton("Tamam", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            FirebaseUser user = mAuth.getCurrentUser();
+                    .setPositiveButton("Tamam", (dialogInterface, i) -> {
+                        FirebaseUser user = mAuth.getCurrentUser();
 
-                            user.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
-                                @Override
-                                public void onSuccess(Void unused) {
-                                    Toast.makeText(SettingsActivity.this, "Hesap Silindi", Toast.LENGTH_SHORT).show();
-                                    mAuth.signOut();
-                                    startActivity(new Intent(getApplicationContext(),MainActivity.class));
-                                    finish();
-                                }
-                            }).addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    Toast.makeText(SettingsActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                        user.delete().addOnSuccessListener(unused -> {
+                            Toast.makeText(SettingsActivity.this, "Hesap Silindi", Toast.LENGTH_SHORT).show();
+                            mAuth.signOut();
+                            startActivity(new Intent(getApplicationContext(),MainActivity.class));
+                            finish();
+                        }).addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
 
-                        }
                     }).setNegativeButton("Vazgeç",null)
                     .create().show();
 
